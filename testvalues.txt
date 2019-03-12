@@ -1,0 +1,45 @@
+X:1
+O undo 2
+O:4
+X:3
+undo 6
+O:8
+X:5
+O:3
+X:9
+check passed
+
+X:1
+O:2
+X:3
+undo, undo
+O:4
+X:5
+O:6
+X:9
+check failed
+
+X:1
+O:2
+undo, redo
+X:5
+undo, redo
+O:3
+X:9
+check passed
+
+X:1
+O:2
+undo 8
+X:3
+undo redo
+O:5
+undo 9
+X:5
+undo redo
+O:6
+X:4
+undo 7
+Check passed
+
+1,8,3,9,6,7
