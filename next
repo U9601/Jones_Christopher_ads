@@ -1,0 +1,8 @@
+Microsoft (R) Incremental Linker Version 14.00.24215.1
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+"/out:Knots and Crosses - Copy.exe" 
+"Knots and Crosses - Copy.cundo" 
+= 
+undo-; 
+LINK : fatal error LNK1181: cannot open input file 'Knots and Crosses - Copy.cundo'
