@@ -175,6 +175,30 @@ int undoredo(struct Node *last, int j){
 
 }
 
+void writeToFile(struct Node *last , int j){
+  FILE *fp;
+  fp = fopen("output.txt", "a");
+  for(int i = 1; i < j; i++){
+    fprintf(fp, "%d\n", last->data);
+    last=last->next;
+  }
+  fclose(fp);
+}
+
+struct Node* readFromFile(){
+  FILE *fp;
+  char line[128];
+  struct Node *p = NULL;
+  fp = fopen("output.txt", "r");
+  while(fgets(line, sizeof(line), fp)){
+    int changetoInt = *line - '0';
+    p = addBegin(p, changetoInt);
+    p = p->next;
+  }
+  fclose(fp);
+  return p;
+}
+
 void replayThroughGame(struct Node *last, struct Node* undo, struct Node* redo, int j){
   int counter = 0;
   int overallGameCounter = 1;
@@ -287,7 +311,6 @@ void replayThroughGame(struct Node *last, struct Node* undo, struct Node* redo, 
     }
 }
 
-
 int main(){
   drawBoard();
   printf("Player 1 (X) has %d and Player 2 (O) has %d wins\n", player1, player2);
@@ -341,6 +364,16 @@ int main(){
           }
           savingGameData = addBegin(savingGameData, redoValue);
        }
+  }
+
+  if(strcmp(area, "read") == 0){
+    struct Node *readData = NULL;
+    readData = readFromFile();
+    for(int i = 0; i < 4; i++){
+      printf("%d\n",readData->data);
+      readData = readData->next;
+    }
+    counter--;
   }
 
     if(strcmp(area, "1") == 0 && gameBoard[0] == '1'){
@@ -445,6 +478,7 @@ int main(){
         printf("Player 1 (X) HAS WON :D POG IN THE CHAT\n");
         printf("Wish to play again? Type restart\n");
         printf("Or wish to watch back yor game? Type replay\n");
+        printf("Or save the game?\n");
         printf("Or type anything else to quit\n");
         player1++;
         break;
@@ -452,6 +486,7 @@ int main(){
         printf("Player 2 (O) HAS WON :D POG IN THE CHAT\n");
         printf("Wish to play again? Type restart\n");
         printf("Or wish to watch back yor game? Type replay\n");
+        printf("Or save the game?\n");
         printf("Or type anything else to quit\n");
         player2++;
         break;
@@ -487,6 +522,9 @@ int main(){
       clearGameBoard();
       replayThroughGame(savingGameData,turnUndo, turnRedo, overallGameCounter);
       drawBoard();
+  }
+  else if(strcmp(restart, "save") == 0 || strcmp(restart, "s")==0){
+    writeToFile(savingGameData, overallGameCounter);
   }
     return 0;
 }
