@@ -4,6 +4,7 @@
 char gameBoard[9] = {'1','2','3','4','5','6','7','8','9'};
 int player1 = 0;
 int player2 = 0;
+int cpu = 0;
 
 struct Node
 {
@@ -87,12 +88,16 @@ void reverse(struct Node* last)
     last = prev;
 }
 
-void drawBoard(){
+void drawBoard(int cpu){
   printf("Noughts and Crosses Game :D\n");
   printf("--------------------------------\n");
   printf("\n");
   printf("\n");
-  printf("Player 1 (X) ------- vs ------- Player 2 (O)\n");
+  if(cpu == 1){
+      printf("Player 1 (X) ------- vs ------- CPU (O)\n");
+  }else{
+    printf("Player 1 (X) ------- vs ------- Player 2 (O)\n");
+  }
   printf("\n");
 
   printf("     |      |      \n");
@@ -274,7 +279,7 @@ int getCount(struct Node* last)
  return result;
 }
 
-void replayThroughGame(struct Node *last, struct Node* undo, struct Node* redo, int j){
+void replayThroughGame(struct Node *last, struct Node* undo, struct Node* redo, int j, int ai){
   int counter = 0;
   int overallGameCounter = 1;
   int undoUsed = 0;
@@ -285,7 +290,7 @@ void replayThroughGame(struct Node *last, struct Node* undo, struct Node* redo, 
     reverse(undo);
     reverse(redo);
     for(int i = 1; i < j+1 ; i++){
-      drawBoard();
+      drawBoard(ai);
 
       printf("data %d\n", last->data);
       printf("next %d\n", last->next->data);
@@ -381,9 +386,35 @@ void replayThroughGame(struct Node *last, struct Node* undo, struct Node* redo, 
       restartGame();
     }else if(strcmp(restart, "replay") == 0 || strcmp(restart, "re")== 0){
         clearGameBoard();
-        replayThroughGame(last, undo, redo, overallGameCounter);
-        drawBoard();
+        replayThroughGame(last, undo, redo, overallGameCounter, ai);
+        drawBoard(ai);
     }
+}
+
+char aiBot(int n, int num_shuffles){
+  char temp[9];
+  for (int i = 0; i < 9; i++) {
+     temp[i] = gameBoard[i];
+  }
+  srand((unsigned)time(NULL));
+   for (int j = 0; j < num_shuffles; j++) {
+       for (int i = 0; i < n - 1; i++) {
+           size_t j = i + rand() / (RAND_MAX / (n - i) + 1);
+           char t = temp[j];
+           temp[j] = temp[i];
+           temp[i] = t;
+       }
+   }
+   int changetoIntX = 'X' - '0';
+   int changetoIntO = 'O' - '0';
+   int value = temp[0] - '0';
+   printf("%c\n", temp[0]);
+   if(value == changetoIntX || value == changetoIntO){
+     aiBot(9, 2);
+   }else{
+     return temp[0];
+   }
+   return 'n';
 }
 
 int main(){
@@ -392,9 +423,18 @@ int main(){
   printf("\n");
   scanf("%d", &input);
   if(input == 1 || input == 2){
-
-    drawBoard();
-    printf("Player 1 (X) has %d and Player 2 (O) has %d wins\n", player1, player2);
+    int ai = 0;
+    if(input == 1){
+      ai = 0;
+    }else{
+      ai = 1;
+    }
+    drawBoard(ai);
+    if(ai == 0){
+      printf("Player 1 (X) has %d and Player 2 (O) has %d wins\n", player1, player2);
+    }else{
+        printf("Player 1 (X) has %d and CPU (O) has %d wins\n", player1, cpu);
+    }
     printf("\n");
     printf("Please enter in a location to start for X\n");
 
@@ -403,6 +443,7 @@ int main(){
     int counter = 0;
     int gameOver = 0;
     char restart[50];
+    char aiValue;
     int undoredoCounter = 0;
     int overallGameCounter = 1;
     int playingFlag = 0;
@@ -411,7 +452,12 @@ int main(){
     struct Node *turnUndo = NULL;
     struct Node *turnRedo = NULL;
 
-    while(scanf("%s", area)){
+    while(overallGameCounter < 11){
+      if(ai == 0){
+        scanf("%s", area);
+      }else if(counter % 2 == 0){
+        scanf("%s", area);
+      }
 
     if(strcmp(area, "undo") == 0 || strcmp(area, "u") == 0)  {
       overallGameCounter--;
@@ -489,6 +535,14 @@ int main(){
        writeToFile(writingTofile, overallGameCounter);
        playingFlag = 0;
        counter--;
+     }
+     printf("counter %d\n", counter);
+     if(ai == 1 && counter % 2 != 0){
+       playingFlag = 1;
+       aiValue = aiBot(9, 4);
+       printf("ai Value: %c\n", aiValue);
+       int changetoInt = aiValue - '0';
+       gameBoard[changetoInt-1] = 'O';
      }
 
       if(strcmp(area, "1") == 0 && gameBoard[0] == '1'){
@@ -582,7 +636,7 @@ int main(){
         }
       }
 
-      drawBoard();
+      drawBoard(ai);
 
 
       gameOver = wincheck();
@@ -599,12 +653,20 @@ int main(){
           player1++;
           break;
         }else{
-          printf("Player 2 (O) HAS WON :D POG IN THE CHAT\n");
+          if (ai == 0){
+            printf("Player 2 (O) HAS WON :D POG IN THE CHAT\n");
+          }else{
+            printf("CPU (O) HAS WON :D POG IN THE CHAT\n");
+          }
           printf("Wish to play again? Type restart\n");
           printf("Or wish to watch back yor game? Type replay\n");
           printf("Or save the game?\n");
           printf("Or type anything else to quit\n");
-          player2++;
+          if(ai == 0){
+            player2++;
+          }else{
+            cpu++;
+          }
           break;
         }
       }
@@ -613,15 +675,27 @@ int main(){
       }
 
       if(counter % 2 == 0){
+        if(ai == 0){
           printf("Players 2 (O) GO\n");
+        }else{
+          printf("CPU (O) GO\n");
+          Sleep(1000);
+        }
       }else{
           printf("Players 1 (X) GO\n");
       }
 
       if(playingFlag == 1)  {
-        int changetoInt = *area - '0';
-        savingGameData = addBegin(savingGameData, changetoInt);
-        writingTofile = addBegin(writingTofile, changetoInt);
+        if (ai == 0 || counter % 2 == 0){
+          int changetoInt = *area - '0';
+          savingGameData = addBegin(savingGameData, changetoInt);
+          writingTofile = addBegin(writingTofile, changetoInt);
+        }else{
+          int changetoInt = aiValue - '0';
+          savingGameData = addBegin(savingGameData, changetoInt);
+          writingTofile = addBegin(writingTofile, changetoInt);
+        }
+
         //traverse(savingGameData);
       }
 
@@ -632,13 +706,17 @@ int main(){
 
     scanf("%s", restart);
     if (strcmp(restart, "restart") == 0){
-      printf("Player 1 (X) has %d and Player 2 (O) has %d wins\n", player1, player2);
+      if (ai == 0){
+        printf("Player 1 (X) has %d and Player 2 (O) has %d wins\n", player1, player2);
+      }else{
+        printf("Player 1 (X) has %d and CPU (O) has %d wins\n", player1, cpu);
+      }
       restartGame();
     }
     else if(strcmp(restart, "replay") == 0 || strcmp(restart, "re")== 0){
         clearGameBoard();
-        replayThroughGame(savingGameData,turnUndo, turnRedo, overallGameCounter);
-        drawBoard();
+        replayThroughGame(savingGameData,turnUndo, turnRedo, overallGameCounter, ai);
+        drawBoard(ai);
     }
   }else if(input == 3){
     int input = 0;
