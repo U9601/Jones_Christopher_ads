@@ -1,5 +1,6 @@
 //inclues libraries
 #include <stdio.h>
+#include <stdlib.h>
 //checks to see what Operating System the user is using
 #ifdef _WIN32
   #include <windows.h>
