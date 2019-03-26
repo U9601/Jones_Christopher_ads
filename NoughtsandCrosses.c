@@ -511,7 +511,6 @@ char aiBot(int n, int num_shuffles){
      //return element 0 :P or n if the bot has malfunctioned some how
      return temp[0];
    }
-   return 'n';
 }
 
 //the main program
@@ -557,7 +556,7 @@ int main(){
     int overallGameCounter = 1;
     int playingFlag = 0;
     int readFlag = 0;
-    int cpuPlayFlag = 0;
+    int cpuPlayFlag = 1;
     struct Node *savingGameData = NULL;
     struct Node *writingTofile = NULL;
     struct Node *turnUndo = NULL;
@@ -752,9 +751,11 @@ int main(){
        playingFlag = 1;
        //the value of the shuffle is then returned
        aiValue = aiBot(9, 4);
+       printf("aiValue %c\n", aiValue);
 
        //and is turned into a char and added to the gameboard
        int changetoInt = aiValue - '0';
+       printf("value: %d\n", changetoInt);
        gameBoard[changetoInt-1] = 'O';
      }
      cpuPlayFlag = 1;
