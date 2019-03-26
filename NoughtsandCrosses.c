@@ -1,6 +1,8 @@
 //inclues libraries
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
+#include <string.h>
 //checks to see what Operating System the user is using
 #ifdef _WIN32
   #include <windows.h>
@@ -307,6 +309,12 @@ int getCount(struct Node* last)
  return result;
 }
 
+void code(){
+  for(int i = 0; i<10000; i++){
+  }
+  printf("\n");
+}
+
 //this method is used to replay through the game after the player has won and wants to watch it back
 void replayThroughGame(struct Node *last, struct Node* undo, struct Node* redo, int j, int ai, int reverseNeeded){
   //intialising variables
@@ -322,6 +330,7 @@ void replayThroughGame(struct Node *last, struct Node* undo, struct Node* redo, 
   if(reverseNeeded == 1){
     reverse(last);
   }
+
   //reverses undo and redo lists
   reverse(undo);
   reverse(redo);
@@ -441,7 +450,21 @@ void replayThroughGame(struct Node *last, struct Node* undo, struct Node* redo, 
             }
           }
         //So the user can actually see wtf is happening when they replay there is a 2.5sec delay on each of the boards being drawn
-        Sleep(2500);
+        #ifdef _WIN32
+          #include <windows.h>
+          #define PLATFORM_NAME "Windows OS"
+          Sleep(2500);
+        #endif
+        #ifdef __APPLE__
+          #include <unistd.h>
+          #define PLATFORM_NAME "MAC OSX"
+          usleep(2500000);
+        #endif
+        #ifdef __linux__
+          #include <unistd.h>
+          #define PLATFORM_NAME "Linux OS"
+          usleep(2500000);
+        #endif
         //sets the previous value to the current and then moves the list pointer to the next
         prev = last->data;
         last=last->next;
@@ -493,6 +516,9 @@ char aiBot(int n, int num_shuffles){
 
 //the main program
 int main(){
+  clock_t t;
+  printf("start %d \n", (int) (t=clock()));
+  code();
   //draw the main menu
   drawMainMenu();
   int input = 0;
@@ -531,6 +557,7 @@ int main(){
     int overallGameCounter = 1;
     int playingFlag = 0;
     int readFlag = 0;
+    int cpuPlayFlag = 0;
     struct Node *savingGameData = NULL;
     struct Node *writingTofile = NULL;
     struct Node *turnUndo = NULL;
@@ -548,148 +575,179 @@ int main(){
 
     //checks to see if the user has typed undo or u for short
     if(strcmp(area, "undo") == 0 || strcmp(area, "u") == 0){
-      //Doesnt count as a turn and we dont want to write any data to the linked list so a flag is not set
-      overallGameCounter--;
-      playingFlag = 0;
+      if(ai == 0){
+        //Doesnt count as a turn and we dont want to write any data to the linked list so a flag is not set
+        overallGameCounter--;
+        playingFlag = 0;
 
-      //if the user tries to undo on their first go then they will be told thats impossible :/
-      if(counter == 0 ){
-        printf("you cant undo on your first go\n");
-        counter -=2;
-      //if the user undos the first go then the game just restarts
-      }else if (counter == 1){
-        restartGame(1);
-      }else{
-        //else we add the turn the undo was used on to the undo list
-        turnUndo = addBegin(turnUndo, overallGameCounter);
+        //if the user tries to undo on their first go then they will be told thats impossible :/
+        if(counter == 0 ){
+          printf("you cant undo on your first go\n");
+          counter -=2;
+        //if the user undos the first go then the game just restarts
+        }else if (counter == 1){
+          restartGame(1);
+        }else{
+          //else we add the turn the undo was used on to the undo list
+          turnUndo = addBegin(turnUndo, overallGameCounter);
 
-        //this is used to count how many times undo is typed in a row
-        undoredoCounter++;
+          //this is used to count how many times undo is typed in a row
+          undoredoCounter++;
 
-        //we then get the value previous turn
-        int undoValue = undoredo(savingGameData, undoredoCounter);
-        //change it to a char and readd it back to the board
-        char changetoChar = undoValue + '0';
-        gameBoard[undoValue-1] = changetoChar;
+          //we then get the value previous turn
+          int undoValue = undoredo(savingGameData, undoredoCounter);
+          //change it to a char and readd it back to the board
+          char changetoChar = undoValue + '0';
+          gameBoard[undoValue-1] = changetoChar;
 
-        //need to go back 2 turns
-        counter -=2;
+          //need to go back 2 turns
+          counter -=2;
 
-        //this list is used for writing to file and an undo is ID'd by a 0
-        writingTofile = addBegin(writingTofile, 0);
+          //this list is used for writing to file and an undo is ID'd by a 0
+          writingTofile = addBegin(writingTofile, 0);
+          }
+        }else{
+          printf("This feature is disabled against the bot dakiHands\n");
+          cpuPlayFlag = 0;
+          counter-=3;
+          playingFlag = 0;
+          overallGameCounter--;
         }
       }
 
     //checks to see if the user has typed redo or r for short
     if(strcmp(area, "redo") == 0 || strcmp(area, "r") == 0){
+      if(ai == 0){
+        overallGameCounter--;
+        playingFlag = 0;
+          //checks to see if anything can actually be redone
+          if(undoredoCounter == 0 || counter == 0){
+            printf("There is nothing to redo\n");
+          }else{
+              //add the turn to the redo counter like undo
+              turnRedo = addBegin(turnRedo, overallGameCounter);
+              int redoValue = undoredo(savingGameData, undoredoCounter);
 
-      overallGameCounter--;
-      playingFlag = 0;
-        //checks to see if anything can actually be redone
-        if(undoredoCounter == 0 || counter == 0){
-          printf("There is nothing to redo\n");
-        }else{
-            //add the turn to the redo counter like undo
-            turnRedo = addBegin(turnRedo, overallGameCounter);
-            int redoValue = undoredo(savingGameData, undoredoCounter);
+              //redo the value to either X or O on the gameboard
+              if(counter % 2 == 0){
+                  gameBoard[redoValue-1] = 'X';
+              }else{
+                  gameBoard[redoValue-1] = 'O';
+              }
 
-            //redo the value to either X or O on the gameboard
-            if(counter % 2 == 0){
-                gameBoard[redoValue-1] = 'X';
-            }else{
-                gameBoard[redoValue-1] = 'O';
-            }
-
-            //save so it can be replayed or written to file
-            savingGameData = addBegin(savingGameData, redoValue);
-            writingTofile = addBegin(writingTofile, redoValue);
-         }
+              //save so it can be replayed or written to file
+              savingGameData = addBegin(savingGameData, redoValue);
+              writingTofile = addBegin(writingTofile, redoValue);
+           }
+       }else{
+         printf("This feature is disabled against the bot dakiHands\n");
+         cpuPlayFlag = 0;
+         counter-=3;
+         playingFlag = 0;
+         overallGameCounter--;
+       }
     }
 
     //checks to see if the user has typed read, load or l for short
     if(strcmp(area, "read") == 0 || strcmp(area, "load") == 0 || strcmp(area, "l") == 0){
-      //sets the gameboard back to its orignial state
-      restartGame(0);
+      if (ai == 0){
+        //sets the gameboard back to its orignial state
+        restartGame(0);
 
-      //intializing variables
-      counter = 0;
-      int prev = 0;
-      char read[20];
-      int sizeofReadData = 0;
-      playingFlag = 0;
-      readFlag = 1;
+        //intializing variables
+        counter = 0;
+        int prev = 0;
+        char read[20];
+        int sizeofReadData = 0;
+        playingFlag = 0;
+        readFlag = 1;
 
-      //asks the user to enter a file they wish to read from
-      printf("Please enter a file name you wish to read from\n");
-      scanf("%s", read);
+        //asks the user to enter a file they wish to read from
+        printf("Please enter a file name you wish to read from\n");
+        scanf("%s", read);
 
-      //gets the read data and finds out how many nodes are in the list
-      readData = readFromFile(read);
-      sizeofReadData = getCount(readData);
+        //gets the read data and finds out how many nodes are in the list
+        readData = readFromFile(read);
+        sizeofReadData = getCount(readData);
 
-      //uses 2 loops to compare all the values from the read data and the gameboard
-      for(int i = 0; i < sizeofReadData ; i++){
-        for(int j = 0; j < 9; j++){
-          //changes the gameboard value into a char
-          char changetoChar = gameBoard[j] - '0';
+        //uses 2 loops to compare all the values from the read data and the gameboard
+        for(int i = 0; i < sizeofReadData ; i++){
+          for(int j = 0; j < 9; j++){
+            //changes the gameboard value into a char
+            char changetoChar = gameBoard[j] - '0';
 
-          //if the read data contains a 0
-          if(readData->data == 0){
+            //if the read data contains a 0
+            if(readData->data == 0){
 
-            //if the next nodes data is the same as the previous then the user undid and redid their go
-            if(readData->next->data == prev){
+              //if the next nodes data is the same as the previous then the user undid and redid their go
+              if(readData->next->data == prev){
 
-              counter--;
+                counter--;
+                if(counter % 2 == 0){
+                    gameBoard[j] = 'X';
+                }else{
+                    gameBoard[j] = 'O';
+                }
+
+              readData = readData->next;
+
+              i++;
+              counter++;
+              }else{
+                //changes an int to char and adds the previous value to the game board as it is not the same
+                char changetoChar = prev + '0';
+                gameBoard[prev-1] = changetoChar;
+
+                counter++;
+              }
+            }
+            //if the current data is = to the gameboard value in the array then see whos go it is and add an X or O
+            if(readData->data == changetoChar){
               if(counter % 2 == 0){
                   gameBoard[j] = 'X';
               }else{
                   gameBoard[j] = 'O';
               }
-
-            readData = readData->next;
-
-            i++;
-            counter++;
-            }else{
-              //changes an int to char and adds the previous value to the game board as it is not the same
-              char changetoChar = prev + '0';
-              gameBoard[prev-1] = changetoChar;
-
               counter++;
             }
           }
-          //if the current data is = to the gameboard value in the array then see whos go it is and add an X or O
-          if(readData->data == changetoChar){
-            if(counter % 2 == 0){
-                gameBoard[j] = 'X';
-            }else{
-                gameBoard[j] = 'O';
-            }
-            counter++;
-          }
+          //sets up the previous and moves the pointer forward
+          prev = readData->data;
+          readData = readData->next;
         }
-        //sets up the previous and moves the pointer forward
-        prev = readData->data;
-        readData = readData->next;
+        counter--;
+      }else{
+        printf("This feature is disabled against the bot dakiHands\n");
+        cpuPlayFlag = 0;
+        counter-=3;
+        playingFlag = 0;
+        overallGameCounter--;
       }
-      counter--;
     }
 
     //checks to see if the user has typed save or s for short
     if(strcmp(area, "save") == 0 || strcmp(area, "s")==0){
-       //reverses the list that will be written to file
-       reverse(writingTofile);
+      if (ai == 0){
+         //reverses the list that will be written to file
+         reverse(writingTofile);
 
-       //gets the count of how many nodes there are and writes them to file
-       int count = getCount(writingTofile);
-       writeToFile(writingTofile, count+1);
+         //gets the count of how many nodes there are and writes them to file
+         int count = getCount(writingTofile);
+         writeToFile(writingTofile, count+1);
 
-       playingFlag = 0;
-       counter--;
+         playingFlag = 0;
+         counter--;
+       }else{
+         printf("This feature is disabled against the bot dakiHands\n");
+         cpuPlayFlag = 0;
+         counter-=3;
+         playingFlag = 0;
+         overallGameCounter--;
+       }
      }
 
      //if the player is playing against the cpu and it isnt the players turn
-     if(ai == 1 && counter % 2 != 0){
+     if(ai == 1 && counter % 2 != 0 && cpuPlayFlag == 1){
        //then this play will be saved so it can be replayed
        playingFlag = 1;
        //the value of the shuffle is then returned
@@ -699,6 +757,7 @@ int main(){
        int changetoInt = aiValue - '0';
        gameBoard[changetoInt-1] = 'O';
      }
+     cpuPlayFlag = 1;
 
      //change the user input into a char
      int changetoIntArea = *area - '0';
@@ -828,7 +887,7 @@ int main(){
             printf("Player 1 (X) HAS WON :D POG IN THE CHAT\n");
             printf("Wish to play again? Type restart\n");
             printf("Or wish to watch back yor game? Type replay\n");
-            printf("Or save the game?\n");
+            printf("GAME SAVED\n");
             printf("Or type anything else to quit\n");
             player1++;
             break;
@@ -840,7 +899,7 @@ int main(){
             }
             printf("Wish to play again? Type restart\n");
             printf("Or wish to watch back yor game? Type replay\n");
-            printf("Or save the game?\n");
+            printf("GAME SAVED\n");
             printf("Or type anything else to quit\n");
 
             if(ai == 0){
@@ -862,11 +921,10 @@ int main(){
           printf("ITS A DRAW STAND DOWN\n");
           printf("Wish to play again? Type restart\n");
           printf("Or wish to watch back yor game? Type replay\n");
-          printf("Or save the game?\n");
+          printf("GAME SAVED\n");
           printf("Or type anything else to quit\n");
           break;
         }
-
         //checks to see whos go it is and notifies the user.
         //the cpu has a 1sec delay between its go so its not too fast
         if(counter % 2 == 0){
@@ -874,7 +932,21 @@ int main(){
             printf("Players 2 (O) GO\n");
           }else{
             printf("CPU (O) GO\n");
-            Sleep(1000);
+            #ifdef _WIN32
+              #include <windows.h>
+              #define PLATFORM_NAME "Windows OS"
+              Sleep(1000);
+            #endif
+            #ifdef __APPLE__
+              #include <unistd.h>
+              #define PLATFORM_NAME "MAC OSX"
+              usleep(1000000);
+            #endif
+            #ifdef __linux__
+              #include <unistd.h>
+              #define PLATFORM_NAME "Linux OS"
+              usleep(1000000);
+            #endif
           }
         }else{
             printf("Players 1 (X) GO\n");
@@ -902,6 +974,8 @@ int main(){
       overallGameCounter++;
 
     }
+    printf("stop: %d\n", (int) (t=clock()-t));
+    printf("Elasped: %f seconds\n", (double) t / CLOCKS_PER_SEC);
 
     //once out of the while loop the user gets their options which they can pick from
     scanf("%s", restart);
